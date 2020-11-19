@@ -7,10 +7,12 @@ Promise.all([
     faceapi.nets.ssdMobilenetv1.loadFromUri('/models')
 ]).then(start)
 
-function start() {
+async function start() {
     const container = document.createElement('div');
     container.style.position = 'relative' ;
     document.body.append(container);
+    const LabeledFaceDescriptors = await loadLabeledImages();
+    const faceMatcher = new faceapi.FaceMatcher(LabeledFaceDescriptors,0.6);
     console.log(container);
     console.log(imgUpload);
 
@@ -26,9 +28,11 @@ function start() {
         const detections = await faceapi.detectAllFaces(image)
         .withFaceLandmarks().withFaceDescriptors();
         const resizedDetections = faceapi.resizeResults(detections,viewSize);
-        resizedDetections.forEach( detection => {
-            const box = detection.detection.box
-            const drawBox = new faceapi.draw.DrawBox (box, {label:'Face'})
+
+        const results = resizedDetections.map(d => faceMatcher.findBestMatch(d.descriptor))
+        results.forEach( (result,i) => {
+            const box = resizedDetections[i].detection.box
+            const drawBox = new faceapi.draw.DrawBox (box, {label:result.toString()})
             drawBox.draw(canvas);
         })
         
@@ -42,9 +46,14 @@ function loadLabeledImages() {
     const labels = ['David'];
     return Promise.all(
         labels.map(async label => {
+            const descriptions = [];
             for( let i = 1; i <= 3; i++) {
-                const img = await faceapi.fetchImage(`https://github.com/SumanaSattar/face-recognition/tree/master/labels/${label}/${i}.jpg`)
+                const img = await faceapi.fetchImage(`./labels/${label}/${i}.jpg`)
+                const detections = await faceapi.detectSingleFace(img)
+                .withFaceLandmarks().withFaceDescriptor();
+                descriptions.push(detections.descriptor);
             }
+            return new faceapi.LabeledFaceDescriptors(label,descriptions)
         })
     )
 }
