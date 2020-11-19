@@ -38,4 +38,8 @@ function start() {
     
 }
 
+function loadLabeledImages() {
+    const labels = ['David']
+}
+
     
