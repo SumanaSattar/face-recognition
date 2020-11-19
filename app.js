@@ -39,7 +39,14 @@ function start() {
 }
 
 function loadLabeledImages() {
-    const labels = ['David']
+    const labels = ['David'];
+    return Promise.all(
+        labels.map(async label => {
+            for( let i = 1; i <= 3; i++) {
+                const img = await faceapi.fetchImage(`https://github.com/SumanaSattar/face-recognition/tree/master/labels/${label}/${i}.jpg`)
+            }
+        })
+    )
 }
 
     
